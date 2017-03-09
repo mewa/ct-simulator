@@ -10,7 +10,8 @@ import System.IO.Unsafe
 someFunc :: IO ()
 someFunc = do
   home <- getHomeDirectory
-  a <- readImage $ home ++ "/Downloads/haskell.png"
+  fname <- fmap head getArgs
+  a <- readImage $ fname
   case a of
     Left err -> putStrLn err
     Right img -> do
