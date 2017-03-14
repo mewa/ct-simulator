@@ -5,11 +5,8 @@ module Lib
 import Codec.Picture
 import Data.Either
 import System.Directory
-import System.IO.Unsafe
-import System.Environment
 import Debug.Trace
 import System.IO
-import qualified Data.Matrix as Mat
 
 processImage :: String -> Double -> IO ()
 processImage fname angle = do
