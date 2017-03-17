@@ -1,5 +1,6 @@
 module Lib
-    ( processImage
+    ( processImage,
+      processImage2
     ) where
 
 import Codec.Picture
@@ -7,6 +8,53 @@ import Data.Either
 import System.Directory
 import Debug.Trace
 import System.IO
+import Data.Array.Repa as R
+import Data.Array.Repa.Repr.Vector
+import Prelude as P
+
+processImage2 :: String -> Double -> IO ()
+processImage2 fname angle = do 
+  a <- readImage $ fname
+  case a of
+    Left err -> putStrLn err
+    Right img -> do
+      putStrLn "Image Loaded"
+      let grey = pixelMap rgbToGreyscale $ convertRGB8 img
+          result = repaDecompose grey angle
+      case result of
+        Just r -> do
+          let renderer x y = r ! (Z :. x :. y)
+              (Z :. w :. h) = extent r
+          writePng "res/result.png" $ generateImage renderer w h
+      print "--OK"
+
+rotateAround :: (Double, Double) -> (Int, Int) -> Double -> (Int, Int)
+rotateAround (cx, cy) pt angle = let
+    d = fromIntegral :: Int -> Double
+    (rx, ry) =  
+      (\(x, y) -> (x * cos angle - y * sin angle, x * sin angle + y * cos angle)) .
+      (\(x, y) -> (d x - cx, d y - cy)) $ 
+      pt
+  in (truncate (rx + cx), truncate (ry + cy))
+
+repaDecompose :: Image PixelYA8 -> Double -> Maybe (Array V DIM2 PixelYA8)
+repaDecompose img angle = let
+    w = imageWidth img
+    h = imageHeight img
+
+    fi = angle * pi / 180.0
+
+    c = (/2.0) . fromIntegral
+    center = (c w, c h)
+
+    toPixel (x, y) = if x >= 0 && y >= 0 && x < w && y < h
+      then pixelAt img x y
+      else PixelYA8 0 255
+
+    arr = fromListUnboxed (Z :. w :. h) [ (x, y) | x <- [0..(w - 1)], y <-[0..(h - 1)]]
+    rotated = R.traverse arr id (\f (Z :. i :. j) -> toPixel $ rotateAround center (i, j) fi)
+    result = computeVectorP rotated
+  in result
 
 processImage :: String -> Double -> IO ()
 processImage fname angle = do
@@ -20,14 +68,14 @@ processImage fname angle = do
           w = length $ result !! 0
           h = length result
           renderer x y = PixelYA8 (truncate $ result !! y !! x) 255
-      print $ "saving " ++ show w ++ "x" ++ show h
+      print $ "saving " P.++ show w P.++ "x" P.++ show h
       print "--OK"
       writePng "res/result.png" $ generateImage renderer w h
   putStrLn "someFunc: "
 
 rgbToGreyscale :: PixelRGB8 -> PixelYA8
 rgbToGreyscale (PixelRGB8 r g b) = 
-  let rgb = zipWith (*) [0.2126, 0.7152, 0.0722] $ map (fromIntegral) [r, g, b] 
+  let rgb = P.zipWith (*) [0.2126, 0.7152, 0.0722] $ P.map (fromIntegral) [r, g, b] 
       value = fromInteger . round . sum $ rgb :: Pixel8
   in (PixelYA8 value 255)
 
@@ -86,8 +134,8 @@ scan img fi step = let
     angle = fi * pi / 180.0
     f = (round . \x -> tan angle * fromIntegral x) :: Int -> Int
     xys = intersect img fi step
-    pixels = map (xyValue img) xys
-    result = map (\(PixelYA8 y a) -> y) pixels
+    pixels = fmap (xyValue img) xys
+    result = fmap (\(PixelYA8 y a) -> y) pixels
   in 
    --trace ("result[" ++ (show $ length result) ++ "]: (fi " ++ show fi ++ ")\n" ++ show result) $ 
-  map fromIntegral result                         
+  fmap fromIntegral result                         

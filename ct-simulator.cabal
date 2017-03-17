@@ -19,7 +19,8 @@ library
   build-depends:       base >= 4.7 && < 5,
                        directory,
                        JuicyPixels,
-                       gloss
+                       gloss,
+                       repa
   default-language:    Haskell2010
 
 executable ct

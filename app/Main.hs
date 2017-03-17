@@ -9,4 +9,4 @@ main = do
     args <- getArgs
     let fname = head args
         angle = read $ args !! 1 :: Double
-    processImage fname angle
+    processImage2 fname angle
