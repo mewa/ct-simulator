@@ -44,15 +44,24 @@ repaDecompose img angle = let
 
     fi = angle * pi / 180.0
 
-    c = (/2.0) . fromIntegral
-    center = (c w, c h)
+    i = round :: Double -> Int
+    d = fromIntegral :: Int -> Double
+    
+    c = (/2.0) . d
+    center@(cx, cy) = (c w, c h)
+    
+    dHyp = sqrt . d $ w^2 + h^2
+    iHyp = round dHyp
+
+    xOffset = i $ (dHyp) / 2.0 - cx
+    yOffset = i $ (dHyp) / 2.0 - cy
 
     toPixel (x, y) = if x >= 0 && y >= 0 && x < w && y < h
       then pixelAt img x y
-      else PixelYA8 0 255
+      else PixelYA8 100 255
 
     arr = fromListUnboxed (Z :. w :. h) [ (x, y) | x <- [0..(w - 1)], y <-[0..(h - 1)]]
-    rotated = R.traverse arr id (\f (Z :. i :. j) -> toPixel $ rotateAround center (i, j) fi)
+    rotated = R.traverse arr (\(Z :. a :. b) -> (Z :. iHyp :. iHyp)) (\f (Z :. i :. j) -> toPixel $ rotateAround center (i - xOffset, j - yOffset) fi)
     result = computeVectorP rotated
   in result
 
