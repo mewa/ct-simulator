@@ -11,6 +11,7 @@ import System.IO
 import Data.Array.Repa as R
 import Data.Array.Repa.Repr.Vector
 import Prelude as P
+import Control.Monad.State.Lazy
 
 processImage2 :: String -> Double -> IO ()
 processImage2 fname angle = do 
@@ -27,6 +28,13 @@ processImage2 fname angle = do
               (Z :. w :. h) = extent r
           writePng "res/result.png" $ generateImage renderer w h
       print "--OK"
+
+repaProject :: (Array V DIM2 PixelYA8) -> (Array U DIM1 Double)
+repaProject arr = let
+    p (PixelYA8 y a) = fromIntegral y / 255.0 :: Double
+    doubles = head (computeP $ R.traverse arr id (\f (Z :. i :. j) -> p $ f (Z :. i :. j))) :: Array U DIM2 Double
+    projected = foldS (+) 0 doubles
+  in projected
 
 rotateAround :: (Double, Double) -> (Int, Int) -> Double -> (Int, Int)
 rotateAround (cx, cy) pt angle = let

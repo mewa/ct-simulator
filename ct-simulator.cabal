@@ -20,7 +20,8 @@ library
                        directory,
                        JuicyPixels,
                        gloss,
-                       repa
+                       repa,
+                       mtl
   default-language:    Haskell2010
 
 executable ct
