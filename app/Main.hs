@@ -8,5 +8,5 @@ main :: IO ()
 main = do 
     args <- getArgs
     let fname = head args
-        angle = read $ args !! 1 :: Double
-    processImage2 fname angle
+        n = read $ args !! 1 :: Int
+    processImage2 fname n
